@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <title>Simple Chatting</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="/webjars/jquery/3.1.0/jquery.min.js"></script>
+    <script src="/webjars/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="/webjars/vue/2.0.0/vue.min.js"></script>
+    <script src="/webjars/sockjs-client/1.0.2/sockjs.min.js"></script>
+    <script src="/webjars/stomp-websocket/2.3.3/stomp.min.js"></script>
+    <link href="/webjars/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/webjars/bootstrap/3.3.7/css/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="/style.css" rel="stylesheet">
+</head>
+<body>
+<div id="chatting-room" class="row bootstrap snippets">
+    <div class="col-md-4">
+    </div>
+    <div class="col-md-4">
+        <div class="panel panel-default">
+            <div class="panel-heading">Setting</div>
+            <div class="panel-body">
+                <div class="input-group">
+                    <span class="input-group-addon">RoomId</span>
+                    <input type="text" v-model="roomId" class="form-control" placeholder="">
+                </div>
+                <div class="input-group">
+                    <span class="input-group-addon">UserName</span>
+                    <input type="text" v-model="userId" name="userId" class="form-control" placeholder="">
+                </div>
+            </div>
+        </div>
+        <div class="box box-success direct-chat direct-chat-success">
+            <div class="box-header with-border">
+                <h3 class="box-title">Direct Chat</h3>
+
+                <div class="box-tools pull-right">
+                    <span data-toggle="tooltip" title="3 New Messages" class="badge bg-green">{{chats.length}}</span>
+                    <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-box-tool" data-toggle="tooltip" title="Contacts" data-widget="chat-pane-toggle">
+                        <i class="fa fa-comments"></i></button>
+                    <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
+                </div>
+            </div>
+            <div class="box-body">
+                <div class="direct-chat-messages">
+                    <div v-if="isEmpty(chats)">
+                        채팅에 참여하였습니다
+                    </div>
+                    <div v-else>
+                        <div v-for="chat in chats">
+                            <div v-if="isMine(chat)">
+                                <div class="direct-chat-msg right">
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-right">{{chat.userId}}</span>
+                                        <span class="direct-chat-timestamp pull-left">{{chat.date}}</span>
+                                    </div>
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg" alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        {{chat.message}}
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-else>
+                                <div class="direct-chat-msg" >
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-left">{{chat.userId}}</span>
+                                        <span class="direct-chat-timestamp pull-right">{{chat.date}}</span>
+                                    </div>
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_1.jpg" alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        {{chat.message}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="box-footer">
+                <div class="input-group">
+                    <input type="text" name="message" placeholder="Type Message ..." class="form-control" @keyup.enter="send">
+                    <span class="input-group-btn">
+                    <button type="submit" class="btn btn-success btn-flat" @click.prevent="send">Send</button>
+                  </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    var application = new Vue({
+        el: '#chatting-room'
+        , data : {
+            roomId : 123
+            , userId : "user"
+            , chats : []
+            , endPoint : '/endpoint'
+            , subscribeUrl : '/chat/messages'
+            , stompClient : null
+        }
+        , methods : {
+            isEmpty : function(value) {
+                return $.isEmptyObject(value);
+            }
+            , isMine : function (chat) {
+                return chat.userId == this.userId;
+            }
+            , connect : function () {
+                this.stompClient = Stomp.over(new SockJS(this.endPoint));
+
+                var _this = this;
+                this.stompClient.connect({}, function(frame) {
+                    console.log("connected: " + frame);
+                    _this.stompClient.subscribe(_this.subscribeUrl, function(response) {
+                        var $data = JSON.parse(response.body);
+                        _this.receive({
+                            roomId : $data.roomId
+                            ,userId : $data.userId
+                            , message : $data.message
+                            , date : new Date()
+                        });
+                    });
+                });
+            }
+            , send : function () {
+                var $message = $('[name=message]');
+
+                var chat = {
+                    roomId : this.roomId
+                    , userId : this.userId
+                    , message : $message.val()
+                    , date : new Date()
+                };
+
+                this.stompClient.send("/app/message", {}, JSON.stringify(chat));
+                $message.val('');
+
+            }
+            , receive : function (chat) {
+                this.chats.push(chat);
+            }
+        }
+        , mounted : function () {
+            this.connect();
+        }
+    });
+</script>
+</body>
+</html>
