@@ -14,7 +14,7 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 public class ChatConfiguration extends AbstractWebSocketMessageBrokerConfigurer {
 
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/chat");
+        registry.enableSimpleBroker("/chat", "/participants");
         registry.setApplicationDestinationPrefixes("/app");
     }
 

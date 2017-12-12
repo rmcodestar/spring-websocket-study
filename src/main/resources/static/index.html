@@ -15,10 +15,8 @@
     <link href="/style.css" rel="stylesheet">
 </head>
 <body>
-<div id="chatting-room" class="row bootstrap snippets">
-    <div class="col-md-4">
-    </div>
-    <div class="col-md-4">
+<div class="container">
+    <div id="chatting-room" class="row bootstrap snippets">
         <div class="panel panel-default">
             <div class="panel-heading">Setting</div>
             <div class="panel-body">
@@ -30,6 +28,8 @@
                     <span class="input-group-addon">UserName</span>
                     <input type="text" v-model="userId" name="userId" class="form-control" placeholder="">
                 </div>
+                <button class="btn btn-primary" @click="connect" :class="{ 'disabled' :isConnected}">connect</button>
+                <button class="btn btn-default" @click="disconnect" :class="{ 'disabled' :!isConnected}">disconnect</button>
             </div>
         </div>
         <div class="box box-success direct-chat direct-chat-success">
@@ -48,7 +48,7 @@
             <div class="box-body">
                 <div class="direct-chat-messages">
                     <div v-if="isEmpty(chats)">
-                        채팅에 참여하였습니다
+                        {{guideMessage}}
                     </div>
                     <div v-else>
                         <div v-for="chat in chats">
@@ -84,14 +84,35 @@
                 <div class="input-group">
                     <input type="text" name="message" placeholder="Type Message ..." class="form-control" @keyup.enter="send">
                     <span class="input-group-btn">
-                    <button type="submit" class="btn btn-success btn-flat" @click.prevent="send">Send</button>
+                    <button type="submit" class="btn btn-success btn-flat" @click.prevent="send" :class="{ 'disabled' : !isConnected }">Send</button>
                   </span>
                 </div>
+            </div>
+        </div>
+        <div class="panel panel-default" v-show="isConnected">
+            <div class="panel-heading">Users</div>
+            <div class="panel-body">
+                <ul class="list-group">
+                    <li class="list-group-item" v-for="user in users">
+                        {{user.userId}} <span class="badge" v-if="user.presented">on</span>
+                    </li>
+                </ul>
             </div>
         </div>
     </div>
 </div>
 <script type="text/javascript">
+    var SUBSCRIBES = {
+        "CHATTING_MESSAGES" : "/chat/messages"
+        , "IN_PARTICIPANTS" : "/participants/room"
+    };
+
+    var APPLICATION_URLS = {
+        "JOIN_ROOM" : "/app/joinRoom"
+        , "NEED_PARTICIPANTS" : "/app/participants"
+        , "SEND_CHATTING_MESSAGE" : "/app/message"
+    };
+
     var application = new Vue({
         el: '#chatting-room'
         , data : {
@@ -99,8 +120,18 @@
             , userId : "user"
             , chats : []
             , endPoint : '/endpoint'
-            , subscribeUrl : '/chat/messages'
             , stompClient : null
+            , users : []
+            , isConnected : false
+        }
+        , computed : {
+            guideMessage : function() {
+                if(this.isConnected) {
+                    return "채팅에 참여하였습니다";
+                } else {
+                    return "설정을 입력한 후 [connect]해주세요"
+                }
+            }
         }
         , methods : {
             isEmpty : function(value) {
@@ -115,7 +146,14 @@
                 var _this = this;
                 this.stompClient.connect({}, function(frame) {
                     console.log("connected: " + frame);
-                    _this.stompClient.subscribe(_this.subscribeUrl, function(response) {
+                    _this.isConnected = true;
+
+                    _this.stompClient.subscribe(SUBSCRIBES.IN_PARTICIPANTS + "." + _this.roomId, function (message) {
+                        _this.users = JSON.parse(message.body).collection || [];
+                    });
+
+
+                    _this.stompClient.subscribe(SUBSCRIBES.CHATTING_MESSAGES + "." + _this.roomId, function (response) {
                         var $data = JSON.parse(response.body);
                         _this.receive({
                             roomId : $data.roomId
@@ -124,10 +162,29 @@
                             , date : new Date()
                         });
                     });
+
+                    _this.stompClient.send(APPLICATION_URLS.JOIN_ROOM, {}, JSON.stringify({
+                        roomId : _this.roomId
+                        ,userId : _this.userId
+                        , date : new Date()
+                    }));
+
+                    setInterval(function () {
+                        _this.refreshUsers();
+                    }, 6000);
                 });
+            }
+            , refreshUsers : function () {
+                this.stompClient.send(APPLICATION_URLS.NEED_PARTICIPANTS, {}, JSON.stringify({
+                    roomId : this.roomId
+                }));
             }
             , send : function () {
                 var $message = $('[name=message]');
+
+                if (!$.trim($message.val())) {
+                    return;
+                }
 
                 var chat = {
                     roomId : this.roomId
@@ -136,16 +193,17 @@
                     , date : new Date()
                 };
 
-                this.stompClient.send("/app/message", {}, JSON.stringify(chat));
+                this.stompClient.send(APPLICATION_URLS.SEND_CHATTING_MESSAGE, {}, JSON.stringify(chat));
                 $message.val('');
-
             }
             , receive : function (chat) {
                 this.chats.push(chat);
             }
-        }
-        , mounted : function () {
-            this.connect();
+            , disconnect : function () {
+                this.stompClient.disconnect();
+                this.isConnected = false;
+                clearInterval();
+            }
         }
     });
 </script>
