@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
+import java.util.Date;
 import java.util.Optional;
 
 /**
@@ -26,7 +27,8 @@ public class SessionEventListener {
     private void handleSessionConnected(SessionConnectEvent event) {
         SimpMessageHeaderAccessor headers = SimpMessageHeaderAccessor.wrap(event.getMessage());
         LoginEvent loginEvent = new LoginEvent();
-        loginEvent.setUserId(headers.getSessionId());
+        loginEvent.setSessionId(headers.getSessionId());
+        loginEvent.setTime(new Date());
 
         sessionRepository.add(headers.getSessionId(), loginEvent);
     }

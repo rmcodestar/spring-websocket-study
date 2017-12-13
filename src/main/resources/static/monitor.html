@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <title>Monitoring</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="/webjars/jquery/3.1.0/jquery.min.js"></script>
+    <script src="/webjars/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="/webjars/vue/2.0.0/vue.min.js"></script>
+    <script src="/webjars/sockjs-client/1.0.2/sockjs.min.js"></script>
+    <script src="/webjars/stomp-websocket/2.3.3/stomp.min.js"></script>
+    <link href="/webjars/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="/style.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <div class="text-center">
+        <h1>Chat <span class="glyphicon glyphicon-comment"></span></h1>
+    </div>
+    <div id="monitoring" class="row bootstrap snippets">
+        <ul class="list-group">
+            <li class="list-group-item active">User <button class="btn btn-default btn-xs pull-right" @click="loadUsers"><span class="glyphicon glyphicon-refresh"></span></button></li>
+            <li class="list-group-item" v-if="isEmpty(users)">User가 없습니다</li>
+            <li class="list-group-item" v-else v-for="(sessionId, userId) in users" class="list-group-item">
+                {{userId}} ({{sessionId}})
+            </li>
+        </ul>
+        <ul class="list-group">
+            <li class="list-group-item active">Sessions <button class="btn btn-default btn-xs pull-right" @click="loadSessions"><span class="glyphicon glyphicon-refresh"></span></button></li>
+            <li class="list-group-item" v-if="isEmpty(sessions)">Sessions 없습니다</li>
+            <li class="list-group-item" v-else v-for="session in sessions" class="list-group-item">
+                <div class="list-group-item-text">{{session}}</div>
+            </li>
+        </ul>
+        <ul class="list-group">
+            <li class="list-group-item active">Rooms <button class="btn btn-default btn-xs pull-right" @click="loadRooms"><span class="glyphicon glyphicon-refresh"></span></button></li>
+            <li class="list-group-item" v-if="isEmpty(rooms)">Room이 없습니다</li>
+            <li class="list-group-item" v-else v-for="(value, key) in rooms" class="list-group-item">
+                <div class="list-group-item-heading">roomId: {{key}}</div>
+                <div class="list-group-item-text">{{value}}</div>
+            </li>
+        </ul>
+    </div>
+</div>
+<script type="text/javascript">
+    var application = new Vue({
+        el: '#monitoring'
+        , data : {
+            users : []
+            , rooms : {}
+            , sessions : []
+        }
+        , methods : {
+            isEmpty : function (value) {
+                return $.isEmptyObject(value);
+            }
+            , loadUsers : function () {
+                var _this = this;
+                $.ajax({
+                    url : "/monitor/users"
+                    , method: "get"
+                }).done(function(json){
+                    _this.users = json;
+                });
+            }
+            , loadRooms : function () {
+                var _this = this;
+                $.ajax({
+                    url : "/monitor/rooms"
+                    , method: "get"
+                }).done(function(json){
+                    _this.rooms = json;
+                });
+            }
+            , loadSessions : function () {
+                var _this = this;
+                $.ajax({
+                    url : "/monitor/sessions"
+                    , method: "get"
+                }).done(function(json){
+                    _this.sessions = json;
+                });
+            }
+
+        }
+    });
+</script>
+</body>
+</html>

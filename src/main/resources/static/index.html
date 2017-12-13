@@ -9,30 +9,34 @@
     <script src="/webjars/vue/2.0.0/vue.min.js"></script>
     <script src="/webjars/sockjs-client/1.0.2/sockjs.min.js"></script>
     <script src="/webjars/stomp-websocket/2.3.3/stomp.min.js"></script>
+    <script src="/webjars/momentjs/2.19.3/moment.js"></script>
+    <script src="/webjars/momentjs/2.19.3/locale/ko.js"></script>
     <link href="/webjars/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/webjars/bootstrap/3.3.7/css/bootstrap-theme.min.css" rel="stylesheet">
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
     <link href="/style.css" rel="stylesheet">
 </head>
 <body>
 <div class="container">
+    <div class="text-center">
+        <h1>Chat <span class="glyphicon glyphicon-comment"></span></h1>
+    </div>
     <div id="chatting-room" class="row bootstrap snippets">
         <div class="panel panel-default">
-            <div class="panel-heading">Setting</div>
+            <div class="panel-heading"><span class="glyphicon glyphicon-star"></span> Setting</div>
             <div class="panel-body">
-                <div class="input-group">
-                    <span class="input-group-addon">RoomId</span>
-                    <input type="text" v-model="roomId" class="form-control" placeholder="">
+                <div class="form-group has-feedback has-feedback-left">
+                    <input type="text" v-model="userId" name="userId" class="form-control" placeholder="User Id">
+                    <i class="glyphicon glyphicon-user form-control-feedback" style="color: gray;"></i>
                 </div>
-                <div class="input-group">
-                    <span class="input-group-addon">UserName</span>
-                    <input type="text" v-model="userId" name="userId" class="form-control" placeholder="">
+                <div class="form-group has-feedback">
+                    <input type="text" v-model="roomId" class="form-control" placeholder="Room Id">
+                    <i class="glyphicon glyphicon-cloud form-control-feedback" style="color: gray;"></i>
                 </div>
-                <button class="btn btn-primary" @click="connect" :class="{ 'disabled' :isConnected}">connect</button>
-                <button class="btn btn-default" @click="disconnect" :class="{ 'disabled' :!isConnected}">disconnect</button>
+                <button class="btn btn-primary btn-block" @click="connect" v-show="!isConnected" :class="{ 'disabled' :isConnected}">CONNECT</button>
+                <button class="btn btn-danger btn-block" @click="disconnect" v-show="isConnected" :class="{ 'disabled' :!isConnected}">DISCONNECT</button>
             </div>
         </div>
-        <div class="box box-success direct-chat direct-chat-success">
+        <div class="box box-success direct-chat direct-chat-success" v-if="isConnected">
             <div class="box-header with-border">
                 <h3 class="box-title">Direct Chat</h3>
 
@@ -56,7 +60,7 @@
                                 <div class="direct-chat-msg right">
                                     <div class="direct-chat-info clearfix">
                                         <span class="direct-chat-name pull-right">{{chat.userId}}</span>
-                                        <span class="direct-chat-timestamp pull-left">{{chat.date}}</span>
+                                        <span class="direct-chat-timestamp pull-left">{{timeFormat(chat.date)}}</span>
                                     </div>
                                     <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg" alt="Message User Image"><!-- /.direct-chat-img -->
                                     <div class="direct-chat-text">
@@ -68,7 +72,7 @@
                                 <div class="direct-chat-msg" >
                                     <div class="direct-chat-info clearfix">
                                         <span class="direct-chat-name pull-left">{{chat.userId}}</span>
-                                        <span class="direct-chat-timestamp pull-right">{{chat.date}}</span>
+                                        <span class="direct-chat-timestamp pull-right">{{timeFormat(chat.date)}}</span>
                                     </div>
                                     <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_1.jpg" alt="Message User Image"><!-- /.direct-chat-img -->
                                     <div class="direct-chat-text">
@@ -90,9 +94,12 @@
             </div>
         </div>
         <div class="panel panel-default" v-show="isConnected">
-            <div class="panel-heading">Users</div>
+            <div class="panel-heading">Users in room({{roomId}})</div>
             <div class="panel-body">
-                <ul class="list-group">
+                <div v-if="isEmpty(users)">
+                    잠시 기다려주세요.
+                </div>
+                <ul v-else class="list-group">
                     <li class="list-group-item" v-for="user in users">
                         {{user.userId}} <span class="badge" v-if="user.presented">on</span>
                     </li>
@@ -116,18 +123,19 @@
     var application = new Vue({
         el: '#chatting-room'
         , data : {
-            roomId : 123
-            , userId : "user"
+            roomId : ""
+            , userId : ""
             , chats : []
             , endPoint : '/endpoint'
             , stompClient : null
             , users : []
             , isConnected : false
+            , intervalId : null
         }
         , computed : {
             guideMessage : function() {
                 if(this.isConnected) {
-                    return "채팅에 참여하였습니다";
+                    return this.roomId + "번 방, 채팅 참여하였습니다";
                 } else {
                     return "설정을 입력한 후 [connect]해주세요"
                 }
@@ -169,7 +177,8 @@
                         , date : new Date()
                     }));
 
-                    setInterval(function () {
+
+                    _this.intervalId = setInterval(function () {
                         _this.refreshUsers();
                     }, 6000);
                 });
@@ -202,8 +211,15 @@
             , disconnect : function () {
                 this.stompClient.disconnect();
                 this.isConnected = false;
-                clearInterval();
+                clearInterval(this.intervalId);
+                this.chats = [];
             }
+            , timeFormat : function (date) {
+                return moment(date).startOf(moment()).fromNow();
+            }
+        }
+        , mounted: function () {
+            moment().locale("ko");
         }
     });
 </script>

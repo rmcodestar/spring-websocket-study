@@ -459,3 +459,10 @@ body{
 .direct-chat-success .right>.direct-chat-text:after, .direct-chat-success .right>.direct-chat-text:before {
     border-left-color: #00a65a;
 }
+
+.login-form {
+    background-color: #edeff1;
+    padding: 24px 23px 20px;
+    position: relative;
+    border-radius: 6px;
+}

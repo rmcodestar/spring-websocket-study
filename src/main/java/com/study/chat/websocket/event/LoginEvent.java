@@ -9,6 +9,6 @@ import java.util.Date;
  */
 @Data
 public class LoginEvent {
-    private String userId;
+    private String sessionId;
     private Date time;
 }
