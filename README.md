@@ -9,5 +9,5 @@ spring websocket study repository
 * spring boot
 * STOMP over websocket
 * JPA with mysql (TODO)
-* RabbitMQ (TODO)
-* Redis (TODO)
+* [RabbitMQ](https://www.rabbitmq.com) (TODO)
+* [Redis](https://redis.io/) (TODO)
