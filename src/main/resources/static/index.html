@@ -25,7 +25,7 @@
             <div class="panel-heading"><span class="glyphicon glyphicon-star"></span> Setting</div>
             <div class="panel-body">
                 <div class="form-group has-feedback has-feedback-left">
-                    <input type="text" v-model="userId" name="userId" class="form-control" placeholder="User Id" :class="{'disabled' : isConnected}">
+                    <input type="text" v-model="userId" name="userId" class="form-control" placeholder="User Id" :disabled="isConnected">
                     <i class="glyphicon glyphicon-user form-control-feedback" style="color: gray;"></i>
                 </div>
                 <button class="btn btn-primary btn-block" @click="connect" v-show="!isConnected"
@@ -36,7 +36,7 @@
                 </button>
                 <fieldset v-if="isConnected" style="margin-top: 10px;">
                     <div class="form-group has-feedback">
-                        <input type="text" v-model="roomId" class="form-control" placeholder="Room Id">
+                        <input type="text" v-model="roomId" class="form-control" placeholder="Room Id" :disabled="joinedRoom">
                         <i class="glyphicon glyphicon-cloud form-control-feedback" style="color: gray;"></i>
                     </div>
                     <button class="btn btn-success btn-block" @click="joinRoom" v-show="!joinedRoom"
@@ -233,15 +233,14 @@
             , leaveRoom : function () {
                 this.joinedRoom = false;
                 this.users = [];
+                this.stompClient.unsubscribe(this.subscriptionForChat.id);
+                this.stompClient.unsubscribe(this.subscriptionForParticipant.id);
 
                 this.stompClient.send(APPLICATION_URLS.LEAVE_ROOM, {}, JSON.stringify({
                     roomId : this.roomId
                     , userId : this.userId
                     , time : new Date()
                 }));
-
-                this.stompClient.unsubscribe(this.subscriptionForChat.id);
-                this.stompClient.unsubscribe(this.subscriptionForParticipant.id);
             }
             , receive: function (chat) {
                 this.chats.push(chat);
