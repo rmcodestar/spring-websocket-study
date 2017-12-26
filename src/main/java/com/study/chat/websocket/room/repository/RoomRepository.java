@@ -1,4 +1,4 @@
-package com.study.chat.websocket.repository;
+package com.study.chat.websocket.room.repository;
 
 import lombok.Getter;
 import org.springframework.stereotype.Repository;
@@ -16,25 +16,28 @@ public class RoomRepository {
     private Map<String, Set<String>> rooms = new ConcurrentHashMap<>();
 
     public void join(String roomId, String userId) {
-        Set<String> participants = this.rooms.get(roomId);
-        if(CollectionUtils.isEmpty(participants)) {
-            participants = new HashSet<>();
-        }
+        Set<String> participants = this.rooms.getOrDefault(roomId, new HashSet<>());
 
         participants.add(userId);
+
         this.rooms.put(roomId, participants);
     }
 
     public void leave(String roomId, String userId) {
         Set<String> participants = this.rooms.get(roomId);
-        if(CollectionUtils.isEmpty(participants)) {
+
+        if (CollectionUtils.isEmpty(participants)) {
             return;
         }
 
         participants.remove(userId);
+
+        if (CollectionUtils.isEmpty(participants)) {
+            this.rooms.remove(roomId);
+        }
     }
 
-    public Set<String> getRoomParticipants(String roomId){
+    public Set<String> getRoomParticipants(String roomId) {
         return this.rooms.get(roomId);
     }
 }

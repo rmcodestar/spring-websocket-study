@@ -12,7 +12,7 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 @Configuration
 @EnableWebSocketMessageBroker
 public class ChatConfiguration extends AbstractWebSocketMessageBrokerConfigurer {
-
+    @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.enableSimpleBroker("/chat", "/participants");
         registry.setApplicationDestinationPrefixes("/app");

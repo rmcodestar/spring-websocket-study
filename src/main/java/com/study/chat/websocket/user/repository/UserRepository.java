@@ -1,4 +1,4 @@
-package com.study.chat.websocket.repository;
+package com.study.chat.websocket.user.repository;
 
 import lombok.Getter;
 import org.springframework.stereotype.Repository;

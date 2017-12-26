@@ -1,4 +1,4 @@
-package com.study.chat.websocket.repository;
+package com.study.chat.websocket.user.repository;
 
 import com.study.chat.websocket.event.LoginEvent;
 import lombok.Getter;

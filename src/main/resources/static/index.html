@@ -25,18 +25,30 @@
             <div class="panel-heading"><span class="glyphicon glyphicon-star"></span> Setting</div>
             <div class="panel-body">
                 <div class="form-group has-feedback has-feedback-left">
-                    <input type="text" v-model="userId" name="userId" class="form-control" placeholder="User Id">
+                    <input type="text" v-model="userId" name="userId" class="form-control" placeholder="User Id" :class="{'disabled' : isConnected}">
                     <i class="glyphicon glyphicon-user form-control-feedback" style="color: gray;"></i>
                 </div>
-                <div class="form-group has-feedback">
-                    <input type="text" v-model="roomId" class="form-control" placeholder="Room Id">
-                    <i class="glyphicon glyphicon-cloud form-control-feedback" style="color: gray;"></i>
-                </div>
-                <button class="btn btn-primary btn-block" @click="connect" v-show="!isConnected" :class="{ 'disabled' :isConnected}">CONNECT</button>
-                <button class="btn btn-danger btn-block" @click="disconnect" v-show="isConnected" :class="{ 'disabled' :!isConnected}">DISCONNECT</button>
+                <button class="btn btn-primary btn-block" @click="connect" v-show="!isConnected"
+                        :class="{ 'disabled' :isConnected}">CONNECT
+                </button>
+                <button class="btn btn-danger btn-block" @click="disconnect" v-show="isConnected"
+                        :class="{ 'disabled' :!isConnected}">DISCONNECT
+                </button>
+                <fieldset v-if="isConnected" style="margin-top: 10px;">
+                    <div class="form-group has-feedback">
+                        <input type="text" v-model="roomId" class="form-control" placeholder="Room Id">
+                        <i class="glyphicon glyphicon-cloud form-control-feedback" style="color: gray;"></i>
+                    </div>
+                    <button class="btn btn-success btn-block" @click="joinRoom" v-show="!joinedRoom"
+                            :class="{ 'disabled' :joinedRoom}">JOIN ROOM
+                    </button>
+                    <button class="btn btn-warning btn-block" @click="leaveRoom" v-show="joinedRoom"
+                            :class="{ 'disabled' :!joinedRoom}">LEAVE ROOM
+                    </button>
+                </fieldset>
             </div>
         </div>
-        <div class="box box-success direct-chat direct-chat-success" v-if="isConnected">
+        <div class="box box-success direct-chat direct-chat-success" v-if="joinedRoom">
             <div class="box-header with-border">
                 <h3 class="box-title">SimpleChat</h3>
 
@@ -44,9 +56,11 @@
                     <span data-toggle="tooltip" title="3 New Messages" class="badge bg-green">{{chats.length}}</span>
                     <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
                     </button>
-                    <button type="button" class="btn btn-box-tool" data-toggle="tooltip" title="Contacts" data-widget="chat-pane-toggle">
+                    <button type="button" class="btn btn-box-tool" data-toggle="tooltip" title="Contacts"
+                            data-widget="chat-pane-toggle">
                         <i class="fa fa-comments"></i></button>
-                    <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
+                    <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i>
+                    </button>
                 </div>
             </div>
             <div class="box-body">
@@ -62,19 +76,21 @@
                                         <span class="direct-chat-name pull-right">{{chat.userId}}</span>
                                         <span class="direct-chat-timestamp pull-left">{{timeFormat(chat.date)}}</span>
                                     </div>
-                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg" alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg"
+                                         alt="Message User Image"><!-- /.direct-chat-img -->
                                     <div class="direct-chat-text">
                                         {{chat.message}}
                                     </div>
                                 </div>
                             </div>
                             <div v-else>
-                                <div class="direct-chat-msg" >
+                                <div class="direct-chat-msg">
                                     <div class="direct-chat-info clearfix">
                                         <span class="direct-chat-name pull-left">{{chat.userId}}</span>
                                         <span class="direct-chat-timestamp pull-right">{{timeFormat(chat.date)}}</span>
                                     </div>
-                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_1.jpg" alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_1.jpg"
+                                         alt="Message User Image"><!-- /.direct-chat-img -->
                                     <div class="direct-chat-text">
                                         {{chat.message}}
                                     </div>
@@ -86,14 +102,16 @@
             </div>
             <div class="box-footer">
                 <div class="input-group">
-                    <input type="text" name="message" placeholder="Type Message ..." class="form-control" @keyup.enter="send">
+                    <input type="text" name="message" placeholder="Type Message ..." class="form-control"
+                           @keyup.enter="send">
                     <span class="input-group-btn">
-                    <button type="submit" class="btn btn-success btn-flat" @click.prevent="send" :class="{ 'disabled' : !isConnected }">Send</button>
+                    <button type="submit" class="btn btn-success btn-flat" @click.prevent="send"
+                            :class="{ 'disabled' : !isConnected }">Send</button>
                   </span>
                 </div>
             </div>
         </div>
-        <div class="panel panel-default" v-show="isConnected">
+        <div class="panel panel-default" v-show="joinedRoom">
             <div class="panel-heading">Users in room({{roomId}})</div>
             <div class="panel-body">
                 <div v-if="isEmpty(users)">
@@ -110,85 +128,68 @@
 </div>
 <script type="text/javascript">
     var SUBSCRIBES = {
-        "CHATTING_MESSAGES" : "/chat/messages"
-        , "IN_PARTICIPANTS" : "/participants/room"
+        "CHATTING_MESSAGES": "/chat/messages"
+        , "IN_PARTICIPANTS": "/participants/room"
     };
 
     var APPLICATION_URLS = {
-        "JOIN_ROOM" : "/app/joinRoom"
-        , "NEED_PARTICIPANTS" : "/app/participants"
-        , "SEND_CHATTING_MESSAGE" : "/app/message"
+        "JOIN_ROOM": "/app/joinRoom"
+        , "LEAVE_ROOM": "/app/leaveRoom"
+        , "SEND_CHATTING_MESSAGE": "/app/message"
     };
 
     var application = new Vue({
         el: '#chatting-room'
-        , data : {
-            roomId : ""
-            , userId : ""
-            , chats : []
-            , endPoint : '/endpoint'
-            , stompClient : null
-            , users : []
-            , isConnected : false
-            , intervalId : null
+        , data: {
+            roomId: ""
+            , userId: ""
+            , chats: []
+            , endPoint: '/endpoint'
+            , stompClient: null
+            , users: []
+            , isConnected: false
+            , joinedRoom : false
+            , subscriptionForChat: null
+            , subscriptionForParticipant: null
         }
-        , computed : {
-            guideMessage : function() {
-                if(this.isConnected) {
+        , watched : {
+            roomId : function (roomId) {
+                if (this.joinedRoom) {
+                    this.leaveRoom();
+                    this.joinRoom();
+                }
+
+                return roomId;
+            }
+        }
+        , computed: {
+            guideMessage: function () {
+                if (this.isConnected) {
                     return this.roomId + "번 방, 채팅 참여하였습니다";
                 } else {
                     return "설정을 입력한 후 [connect]해주세요"
                 }
             }
         }
-        , methods : {
-            isEmpty : function(value) {
+        , methods: {
+            isEmpty: function (value) {
                 return $.isEmptyObject(value);
             }
-            , isMine : function (chat) {
+            , isMine: function (chat) {
                 return chat.userId == this.userId;
             }
-            , connect : function () {
+            , connect: function () {
                 this.stompClient = Stomp.over(new SockJS(this.endPoint));
 
                 var _this = this;
-                this.stompClient.connect({}, function(frame) {
+                this.stompClient.connect({
+                    userId : this.userId
+                }, function (frame) {
                     console.log("connected: " + frame);
                     _this.isConnected = true;
-
-                    _this.stompClient.subscribe(SUBSCRIBES.IN_PARTICIPANTS + "." + _this.roomId, function (message) {
-                        _this.users = JSON.parse(message.body).collection || [];
-                    });
-
-
-                    _this.stompClient.subscribe(SUBSCRIBES.CHATTING_MESSAGES + "." + _this.roomId, function (response) {
-                        var $data = JSON.parse(response.body);
-                        _this.receive({
-                            roomId : $data.roomId
-                            ,userId : $data.userId
-                            , message : $data.message
-                            , date : new Date()
-                        });
-                    });
-
-                    _this.stompClient.send(APPLICATION_URLS.JOIN_ROOM, {}, JSON.stringify({
-                        roomId : _this.roomId
-                        ,userId : _this.userId
-                        , date : new Date()
-                    }));
-
-
-                    _this.intervalId = setInterval(function () {
-                        _this.refreshUsers();
-                    }, 6000);
                 });
             }
-            , refreshUsers : function () {
-                this.stompClient.send(APPLICATION_URLS.NEED_PARTICIPANTS, {}, JSON.stringify({
-                    roomId : this.roomId
-                }));
-            }
-            , send : function () {
+            , send: function () {
                 var $message = $('[name=message]');
 
                 if (!$.trim($message.val())) {
@@ -196,30 +197,72 @@
                 }
 
                 var chat = {
-                    roomId : this.roomId
-                    , userId : this.userId
-                    , message : $message.val()
-                    , date : new Date()
+                    roomId: this.roomId
+                    , userId: this.userId
+                    , message: $message.val()
+                    , date: new Date()
                 };
 
                 this.stompClient.send(APPLICATION_URLS.SEND_CHATTING_MESSAGE, {}, JSON.stringify(chat));
                 $message.val('');
             }
-            , receive : function (chat) {
+            , joinRoom: function () {
+                var _this = this;
+                this.joinedRoom = true;
+
+                this.subscriptionForChat = this.stompClient.subscribe(SUBSCRIBES.CHATTING_MESSAGES + "." + _this.roomId, function (response) {
+                    var $data = JSON.parse(response.body);
+                    _this.receive({
+                        roomId: $data.roomId
+                        , userId: $data.userId
+                        , message: $data.message
+                        , date: new Date()
+                    });
+                });
+
+                this.subscriptionForParticipant = this.stompClient.subscribe(SUBSCRIBES.IN_PARTICIPANTS + "." + _this.roomId, function (message) {
+                    _this.users = JSON.parse(message.body)['collection'] || [];
+                });
+
+                this.stompClient.send(APPLICATION_URLS.JOIN_ROOM, {}, JSON.stringify({
+                    roomId : this.roomId
+                    , userId : this.userId
+                    , time : new Date()
+                }));
+            }
+            , leaveRoom : function () {
+                this.joinedRoom = false;
+                this.users = [];
+
+                this.stompClient.send(APPLICATION_URLS.LEAVE_ROOM, {}, JSON.stringify({
+                    roomId : this.roomId
+                    , userId : this.userId
+                    , time : new Date()
+                }));
+
+                this.stompClient.unsubscribe(this.subscriptionForChat.id);
+                this.stompClient.unsubscribe(this.subscriptionForParticipant.id);
+            }
+            , receive: function (chat) {
                 this.chats.push(chat);
             }
-            , disconnect : function () {
+            , disconnect: function () {
                 this.stompClient.disconnect();
                 this.isConnected = false;
-                clearInterval(this.intervalId);
                 this.chats = [];
             }
-            , timeFormat : function (date) {
+            , timeFormat: function (date) {
                 return moment(date).startOf(moment()).fromNow();
             }
         }
         , mounted: function () {
             moment().locale("ko");
+
+            var _this = this;
+            jQuery(window).bind('beforeunload', function(e) {
+               _this.disconnect();
+               return false;
+            });
         }
     });
 </script>

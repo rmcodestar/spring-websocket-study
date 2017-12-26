@@ -1,4 +1,4 @@
-package com.study.chat.websocket.domain;
+package com.study.chat.websocket.user.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
